@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Kalkulator Jarak Tempuh Pengguna</title>
+</head>
+
+<body>
+  <button onclick="startTracking()">Mulai Lacak Jarak</button>
+  <p id="distance">Jarak tempuh: 0 meter</p>
+
+  <script>
+    function startTracking() {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          function (position) {
+            console.log('Lokasi Awal:', position.coords);
+            prevPosition = position.coords;
+            watchId = navigator.geolocation.watchPosition(updateDistance);
+          },
+          function (error) {
+            console.error('Error: ' + error.message);
+          }
+        );
+      } else {
+        alert('Geolocation tidak didukung di perangkat ini.');
+      }
+    }
+
+    function updateDistance(position) {
+      const currentPosition = position.coords;
+      const distance = calculateDistance(prevPosition, currentPosition);
+      totalDistance += distance;
+      prevPosition = currentPosition;
+
+      const distanceElement = document.getElementById('distance');
+      distanceElement.textContent = `Jarak tempuh: ${totalDistance.toFixed(2)} meter`;
+    }
+
+    function calculateDistance(coord1, coord2) {
+      const lat1 = coord1.latitude;
+      const lon1 = coord1.longitude;
+      const lat2 = coord2.latitude;
+      const lon2 = coord2.longitude;
+
+      const earthRadius = 6371000; // Radius bumi dalam meter
+      const dLat = degToRad(lat2 - lat1);
+      const dLon = degToRad(lon2 - lon1);
+
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(degToRad(lat1)) * Math.cos(degToRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = earthRadius * c;
+
+      return distance;
+    }
+
+    function degToRad(deg) {
+      return deg * (Math.PI / 180);
+    }
+
+    // Service Worker registration
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(registration => console.log('Service Worker registered with scope:', registration.scope))
+        .catch(error => console.error('Service Worker registration failed:', error));
+    }
+  </script>
+
+  <script src="service-worker.js"></script>
+</body>
+
+</html>
