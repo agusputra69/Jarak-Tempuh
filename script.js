@@ -18,42 +18,21 @@ function toRad(deg) {
   return deg * (Math.PI / 180);
 }
 
-function saveToLocalStorage() {
-  localStorage.setItem('totalDistance', totalDistance);
-  localStorage.setItem('initialDistance', initialDistance);
-}
+async function getAddressFromCoordinates(latitude, longitude) {
+  // Ganti dengan API key Geocoding Anda
+  const apiKey = 'AIzaSyDmv1yP--wrbXEQNKKGAMRaH9J2_V5yBgk';
+  const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`);
+  const data = await response.json();
 
-function loadFromLocalStorage() {
-  totalDistance = parseFloat(localStorage.getItem('totalDistance')) || 0;
-  initialDistance = parseFloat(localStorage.getItem('initialDistance')) || 0;
-}
-
-loadFromLocalStorage();
-
-function updateDistance() {
-  const distanceElement = document.getElementById('totalDistance');
-  distanceElement.textContent = totalDistance.toFixed(2);
-
-  const initialDistanceElement = document.getElementById('initialDistance');
-  initialDistanceElement.textContent = initialDistance.toFixed(2);
-
-  const currentDistanceElement = document.getElementById('currentDistance');
-  currentDistanceElement.textContent = (totalDistance - initialDistance).toFixed(2);
-
-  saveToLocalStorage();
-}
-
-function addManualDistance() {
-  const manualDistance = parseFloat(prompt('Masukkan jarak tempuh awal (km):'));
-  if (!isNaN(manualDistance) && manualDistance >= 0) {
-    initialDistance = manualDistance;
-    updateDistance();
+  if (data.status === 'OK' && data.results[0]) {
+    const address = data.results[0].formatted_address;
+    return address;
   } else {
-    alert('Input tidak valid. Harap masukkan angka yang valid.');
+    return 'Informasi alamat tidak tersedia';
   }
 }
 
-function onPositionUpdate(position) {
+async function updateDistanceAndLocation(position) {
   const { latitude, longitude } = position.coords;
 
   if (previousPosition) {
@@ -68,18 +47,80 @@ function onPositionUpdate(position) {
   }
 
   previousPosition = position;
+
+  // Update latitude and longitude
+  document.getElementById('latitude').textContent = latitude.toFixed(6);
+  document.getElementById('longitude').textContent = longitude.toFixed(6);
+
+  // Get and display address
+  const addressElement = document.getElementById('address');
+  const address = await getAddressFromCoordinates(latitude, longitude);
+  addressElement.textContent = 'Lokasi Sekarang: ' + address;
 }
 
-if (navigator.permissions) {
-  navigator.permissions.query({ name: 'geolocation' })
-    .then(permissionStatus => {
-      if (permissionStatus.state === 'granted') {
-        navigator.geolocation.watchPosition(onPositionUpdate);
-      } else {
-        console.log('Akses lokasi ditolak.');
-      }
-    })
-    .catch(error => console.error('Error querying permission:', error));
-} else {
-  console.log('Perangkat tidak mendukung izin lokasi.');
+function updateDistance() {
+  const distanceElement = document.getElementById('totalDistance');
+  distanceElement.textContent = totalDistance.toFixed(2);
+
+  const initialDistanceElement = document.getElementById('initialDistance');
+  initialDistanceElement.textContent = initialDistance.toFixed(2);
+
+  const currentDistanceElement = document.getElementById('currentDistance');
+  currentDistanceElement.textContent = (totalDistance + initialDistance).toFixed(2);
 }
+
+function addManualDistance() {
+  const manualDistance = parseFloat(prompt('Masukkan jarak tempuh awal (km):'));
+  if (!isNaN(manualDistance) && manualDistance >= 0) {
+    initialDistance = manualDistance;
+    updateDistance();
+  } else {
+    alert('Input tidak valid. Harap masukkan angka yang valid.');
+  }
+}
+
+async function requestLocationPermission() {
+  if (navigator.permissions) {
+    const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
+    handlePermissionStatus(permissionStatus);
+  } else {
+    console.log('Perangkat tidak mendukung izin lokasi.');
+  }
+}
+
+function handlePermissionStatus(permissionStatus) {
+  if (permissionStatus.state === 'granted') {
+    console.log('Izin akses lokasi sudah diberikan.');
+    startTrackingLocation();
+  } else if (permissionStatus.state === 'prompt') {
+    console.log('Menunggu izin akses lokasi...');
+    requestGeolocationPermission();
+  } else {
+    console.log('Akses lokasi ditolak.');
+  }
+}
+
+async function requestGeolocationPermission() {
+  try {
+    const position = await navigator.geolocation.getCurrentPosition();
+    console.log('Izin akses lokasi diberikan.');
+    startTrackingLocation();
+  } catch (error) {
+    console.error('Izin akses lokasi ditolak:', error);
+  }
+}
+
+function startTrackingLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(onPositionUpdate);
+  } else {
+    console.log('Perangkat tidak mendukung geolocation.');
+  }
+}
+
+function onPositionUpdate(position) {
+  updateDistanceAndLocation(position);
+}
+
+// Memanggil fungsi untuk meminta izin akses lokasi
+requestLocationPermission();
