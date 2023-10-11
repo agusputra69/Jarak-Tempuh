@@ -15,11 +15,13 @@
       <p>Total Jarak Tempuh: <span id="totalDistance">0</span> km</p>
       <p>Jarak Tempuh Awal: <span id="initialDistance">0</span> km</p>
       <p>Jarak Tempuh Sekarang: <span id="currentDistance">0</span> km</p>
-      <p id="address">Lokasi Sekarang: Menunggu pembaruan lokasi...</p>
+      <p id="address">Lokasi Sekarang: <span class="loading-text">Menunggu pembaruan lokasi...</span></p>
       <p>Latitude: <span id="latitude">0</span></p>
       <p>Longitude: <span id="longitude">0</span></p>
     </div>
     <button onclick="addManualDistance()">Tambah Jarak Tempuh Awal</button>
+    <button onclick="toggleTracking()">Pause Tracking</button>
+    <button onclick="resetInitialDistance()">Reset</button>
   </div>
 
   <script src="script.js"></script>
