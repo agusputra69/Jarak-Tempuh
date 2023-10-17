@@ -49,3 +49,4 @@ const postData = async (distance) => {
 
 // Panggil postData dengan data jarak
 // Misalnya: postData(5.2); // Jarak dalam kilometer
+postData(5);
